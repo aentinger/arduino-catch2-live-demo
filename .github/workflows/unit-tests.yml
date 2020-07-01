@@ -1,0 +1,59 @@
+name: Unit Tests
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/unit-tests.yml"
+      - 'extras/test/**'
+      - 'src/**'
+
+  push:
+    paths:
+      - ".github/workflows/unit-tests.yml"
+      - 'extras/test/**'
+      - 'src/**'
+
+jobs:
+  test:
+    name: Run unit tests
+    runs-on: ubuntu-latest
+
+    env:
+      BUILD_PATH: "${{ github.workspace }}/extras/test/build"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install valgrind
+        run: sudo apt-get install valgrind
+
+      - name: Run unit tests
+        run: |
+          mkdir "$BUILD_PATH"
+          cd "$BUILD_PATH"
+          # Generate makefile
+          cmake ..
+          # Run makefile
+          make
+          # Run tests and check for memory leaks
+          valgrind --leak-check=yes --error-exitcode=1 bin/unit-test-binary
+
+      - name: Install lcov
+        run: sudo apt-get --assume-yes install lcov
+
+      - name: Report code coverage
+        run: |
+          cd "$BUILD_PATH"
+          # Generate coverage report
+          lcov --directory . --capture --output-file coverage.info
+          # Remove irrelevant files from coverage report
+          lcov --quiet --remove coverage.info '*/extras/test/*' '/usr/*' '*/src/lib/*' --output-file coverage.info
+          # Print coverage report to workflow log
+          lcov --list coverage.info
+
+      - name: Upload coverage report to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          file: "${{ env.BUILD_PATH }}/coverage.info"
+          fail_ci_if_error: true
