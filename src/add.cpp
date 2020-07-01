@@ -2,5 +2,5 @@
 
 int add(int const a, int const b)
 {
-  return (a + b);
+  return 42;
 }
