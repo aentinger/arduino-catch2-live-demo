@@ -3,4 +3,6 @@
 
 int add(int const a, int const b);
 
+int subtract(int const a, int const b);
+
 #endif /* ARDUINO_ADD_H_ */
